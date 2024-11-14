@@ -5,62 +5,71 @@ const twitterButton = document.getElementById('twitter');
 const newButtonQuote = document.getElementById('new-quote');
 const loader = document.getElementById('loader');
 
-let apiQuotes = [];
+const RAPIDAPI_KEY = 'YOUR_RAPIDAPI_KEY'; // Replace with your actual RapidAPI key
 
 // Show Loading
-function loading () {
+function loading() {
     loader.hidden = false;
     quoteContainer.hidden = true;
+    newButtonQuote.disabled = true;
 }
 
 // Hide Loading
-function completed () {
+function completed() {
     loader.hidden = true;
     quoteContainer.hidden = false;
+    newButtonQuote.disabled = false;
 }
 
-
-
 // Get quotes from API
-async function getQuotes () {
+async function getQuotes() {
     loading();
     const apiurl = 'https://andruxnet-random-famous-quotes.p.rapidapi.com/?count=10&cat=movies';
+    
+    try {
+        const response = await fetch(apiurl, {
+            method: 'GET',
+            headers: {
+                'x-rapidapi-key': RAPIDAPI_KEY,
+                'x-rapidapi-host': 'andruxnet-random-famous-quotes.p.rapidapi.com',
+                'Content-Type': 'application/json'
+            }
+        });
 
-    // Fetching the data
-    fetch(apiurl)
-    .then (response => response.json())
-
-    //Show new quotes
-    .then (apiQuotes => {
-        const quote = apiQuotes[Math.floor(Math.random() * apiQuotes.length)]; 
-
-        // CHeck if the author feild is blank replace it with unknown
-        if (!quote.author) {
-            authorText.textContent = "Unknown";
-        } else {
-            authorText.textContent = quote.author;
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        //Checking the quote length to determine the styling 
+        const apiQuotes = await response.json();
+
+        if (!Array.isArray(apiQuotes) || apiQuotes.length === 0) {
+            throw new Error('No quotes found.');
+        }
+
+        const quote = apiQuotes[Math.floor(Math.random() * apiQuotes.length)];
+
+        authorText.textContent = quote.author || "Unknown";
+
         if (quote.text.length > 50) {
             quoteText.classList.add('long-quote');
         } else {
             quoteText.classList.remove('long-quote');
         }
-        // Set quote and hide loader
+
         quoteText.textContent = quote.text;
+
         completed();
-    })
-    .catch (error => {
-        console.log(error);
-    });
+    } catch (error) {
+        console.error('Error fetching quotes:', error);
+        quoteText.textContent = "Failed to fetch quotes. Please try again later.";
+        authorText.textContent = "";
+        completed();
+    }
 }
 
 // Tweet Quotes 
-function tweetQuote () {
-    // Question mark indicates query parameter
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${quoteText.textContent} - ${authorText.textContent}`;
-    //Allow us to open a new window using a twitter url
+function tweetQuote() {
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(quoteText.textContent)} - ${encodeURIComponent(authorText.textContent)}`;
     window.open(twitterUrl, '_blank');
 }
 
@@ -68,6 +77,5 @@ function tweetQuote () {
 newButtonQuote.addEventListener('click', getQuotes);
 twitterButton.addEventListener('click', tweetQuote);
 
-
-//On Load
+// On Load
 getQuotes();
