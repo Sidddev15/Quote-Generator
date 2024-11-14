@@ -24,7 +24,7 @@ function completed () {
 // Get quotes from API
 async function getQuotes () {
     loading();
-    const apiurl = 'https://type.fit/api/quotes';
+    const apiurl = 'https://andruxnet-random-famous-quotes.p.rapidapi.com/?count=10&cat=movies';
 
     // Fetching the data
     fetch(apiurl)
